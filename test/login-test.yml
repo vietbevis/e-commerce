@@ -1,0 +1,29 @@
+config:
+  target: 'http://localhost:4001'
+  phases:
+    - duration: 1
+      arrivalRate: 50
+      name: 'Warm up'
+  plugins:
+    fake-data: {}
+  defaults:
+    headers:
+      content-type: 'application/json'
+scenarios:
+  - name: "Login users"
+    flow:
+      - post:
+          url: "/api/v1/auth/login"
+          json:
+            email: "nguyenvanviet.150204@gmail.com"
+            password: "Vietviet@150204"
+#scenarios:
+#  - name: "Register users"
+#    flow:
+#      - post:
+#          url: "/api/v1/auth/register"
+#          json:
+#            fullName: "{{  $randFullName() }}"
+#            email: "{{ $randEmail() }}"
+#            password: "Vietviet@150204"
+#            confirmPassword: "Vietviet@150204"

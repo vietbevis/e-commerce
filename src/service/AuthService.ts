@@ -10,7 +10,7 @@ import { logInfo } from '@/utils/log'
 import { JwtService } from '@/service/JwtService'
 import { SessionRepository } from '@/repository/SessionRepository'
 import RedisService from '@/service/RedisService'
-import { sessionKey } from '@/utils/keyRedis'
+import { sessionKey, verificationKey } from '@/utils/keyRedis'
 import envConfig from '@/config/envConfig'
 import ms from 'ms'
 import { KafkaService } from '@/service/KafkaService'
@@ -34,13 +34,13 @@ export const AuthService = {
       email: body.email,
       password: pwdHash,
       username,
-      status: UserStatus.VERIFIED
+      status: UserStatus.NOT_VERIFIED
     })
 
     // Save the user
     await UserRepository.save(newUser)
 
-    const verificationToken = Math.random().toString(36).substring(2, 10)
+    const verificationToken = Math.floor(100000 + Math.random() * 900000).toString()
     await KafkaService.sendMailMessageToKafka(newUser.email, verificationToken)
 
     logInfo('User created successfully: ' + newUser.email)
@@ -75,7 +75,7 @@ export const AuthService = {
   ): Promise<void> => {
     // Save session to redis
     await Promise.all([
-      SessionRepository.upsertByUserIdAndDevice(user.id, deviceName, deviceType, accessToken, refreshToken),
+      SessionRepository.findByUserIdAndDeviceOrCreate(user.id, deviceName, deviceType),
       RedisService.setCacheItem(
         sessionKey(user.id, deviceName, deviceType, TokenType.ACCESS_TOKEN),
         accessToken,
@@ -111,5 +111,15 @@ export const AuthService = {
       [TokenType.ACCESS_TOKEN]: accessToken,
       [TokenType.REFRESH_TOKEN]: refreshToken
     }
+  },
+
+  verifyAccount: async (email: string, token: string): Promise<boolean> => {
+    const tokenCached = await RedisService.getCacheItem(verificationKey(email))
+    if (tokenCached !== token) throw new BadRequestError(MESSAGES.INVALID_VERIFICATION_TOKEN)
+
+    await UserRepository.changeStatus(email, UserStatus.VERIFIED)
+
+    logInfo('User account verified successfully: ' + email)
+    return true
   }
 }

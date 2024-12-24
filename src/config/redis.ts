@@ -9,7 +9,8 @@ export const getRedisClient = (): Redis => {
     redisClient = new Redis({
       host: envConfig.REDIS_HOST,
       port: envConfig.REDIS_PORT,
-      password: envConfig.REDIS_PASSWORD
+      password: envConfig.REDIS_PASSWORD,
+      maxRetriesPerRequest: null
     })
 
     redisClient.on('connect', () => {
@@ -18,10 +19,6 @@ export const getRedisClient = (): Redis => {
 
     redisClient.on('error', (err) => {
       logError('[Redis Error]: ', err)
-    })
-
-    redisClient.on('connecting', () => {
-      logInfo('[Redis] Connecting...')
     })
   }
   return redisClient

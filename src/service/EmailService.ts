@@ -1,6 +1,6 @@
 import fs from 'fs'
 import path from 'path'
-import envConfig, { API_URL } from '@/config/envConfig'
+import envConfig from '@/config/envConfig'
 import { logError, logInfo } from '@/utils/log'
 import { transporter } from '@/config/email'
 
@@ -9,10 +9,8 @@ export const EmailService = {
   emailTemplate: fs.readFileSync(path.resolve(__dirname, '..', '..', 'verify-email.html'), 'utf8'),
 
   sendMail: async (email: string, token: string, retryCount = 0): Promise<boolean> => {
-    const maxRetries = MAX_RETRIES
-    const verificationLink = `${API_URL}/api/v1/auth/verify/${token}`
     let emailTemplate = EmailService.emailTemplate
-    emailTemplate = emailTemplate.replace(/{{action_url}}/g, verificationLink)
+    emailTemplate = emailTemplate.replace(/{{otp}}/g, token)
 
     try {
       await transporter.sendMail({
@@ -26,11 +24,11 @@ export const EmailService = {
     } catch (error) {
       logError(`Error sending email(${email}): ${error}`)
 
-      if (retryCount < maxRetries - 1) {
-        logInfo(`Retrying to send email to ${email}. Attempt ${retryCount + 2} of ${maxRetries}`)
+      if (retryCount < MAX_RETRIES - 1) {
+        logInfo(`Retrying to send email to ${email}. Attempt ${retryCount + 2} of ${MAX_RETRIES}`)
         return EmailService.sendMail(email, token, retryCount + 1)
       } else {
-        logError(`Failed to send email to ${email} after ${maxRetries} attempts`)
+        logError(`Failed to send email to ${email} after ${MAX_RETRIES} attempts`)
         return false
       }
     }

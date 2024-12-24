@@ -1,31 +1,21 @@
 import { Session } from '@/model/Session'
 import { AppDataSource } from '@/config/database'
+import ms from 'ms'
+import envConfig from '@/config/envConfig'
 
 export const SessionRepository = AppDataSource.getRepository(Session).extend({
-  async upsertByUserIdAndDevice(
-    userId: string,
-    deviceName: string,
-    deviceType: string,
-    accessToken: string,
-    refreshToken: string
-  ) {
+  async findByUserIdAndDeviceOrCreate(userId: string, deviceName: string, deviceType: string) {
     let session = await this.findOne({ where: { user: { id: userId }, deviceName, deviceType } })
 
-    // If the session already exists, update the tokens
-    if (session) {
-      session.accessToken = accessToken
-      session.refreshToken = refreshToken
-      return this.save(session)
+    if (!session) {
+      session = this.create({
+        user: { id: userId },
+        deviceName,
+        deviceType
+      })
     }
 
-    // Otherwise, create a new session
-    session = this.create({
-      user: { id: userId },
-      deviceName,
-      deviceType,
-      accessToken,
-      refreshToken
-    })
+    session.expiresAt = new Date(Date.now() + ms(envConfig.REFRESH_TOKEN_EXPIRES_IN))
 
     return this.save(session)
   }

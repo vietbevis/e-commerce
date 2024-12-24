@@ -43,6 +43,7 @@
     "@types/ms": "^0.7.34",
     "@types/nodemailer": "^6.4.17",
     "bcryptjs": "^2.4.3",
+    "bullmq": "^5.34.4",
     "compression": "^1.7.5",
     "cookie-parser": "^1.4.7",
     "express": "^4.21.2",

@@ -5,6 +5,10 @@ export const RedisService = {
     await RedisRepository.set(key, value, expirationInSeconds)
   },
 
+  setCacheItemWithLock: async (key: string, value: string, expirationInSeconds?: number): Promise<boolean> => {
+    return await RedisRepository.setWithLock(key, value, expirationInSeconds)
+  },
+
   getCacheItem: async (key: string): Promise<string | null> => {
     return await RedisRepository.get(key)
   },

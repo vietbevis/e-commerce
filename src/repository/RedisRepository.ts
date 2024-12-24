@@ -4,10 +4,15 @@ const redisClient = getRedisClient()
 const RedisRepository = {
   set: async (key: string, value: string, expirationInSeconds?: number): Promise<void> => {
     if (expirationInSeconds) {
-      await redisClient.setex(key, expirationInSeconds, value)
+      await redisClient.setex(key, expirationInSeconds ?? 0, value)
     } else {
       await redisClient.set(key, value)
     }
+  },
+
+  setWithLock: async (key: string, value: string, expirationInSeconds?: number): Promise<boolean> => {
+    const result = await redisClient.call('set', key, value, 'NX', 'PX', expirationInSeconds ?? 0)
+    return result === 'OK'
   },
 
   get: async (key: string): Promise<string | null> => {
